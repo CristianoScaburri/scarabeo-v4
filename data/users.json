@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "username": "dev1",
+    "passwordHash": "dbdb48c703ebae50ddab5d64e4284f6b27093801f2141dd4f7ba0e2d2d3238f915f83d18778cba399f7dd6960dd06863411d65fac2860856717ac559926f63a6",
+    "salt": "d13493dde8ff5b8581e3d2a0b59edc07ad93352173b699fee39d76184942bb7f",
+    "createdAt": "2026-03-30T09:50:06.413Z",
+    "stats": {
+      "gamesPlayed": 0,
+      "gamesWon": 0,
+      "totalScore": 0,
+      "bestWord": null,
+      "bestWordScore": 0
+    }
+  }
+]
