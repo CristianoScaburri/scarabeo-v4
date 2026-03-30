@@ -32,6 +32,7 @@ requestAnimationFrame(function loop(){ GameApi.update(); requestAnimationFrame(l
 let ws=null, reconnTimer=null;
 let myId=null, myName='', myRoom='', myToken=null, myUsername=null;
 let isCreator=false;
+let nameConfirmed=false; // NUOVO: traccia se il nome è confermato
 let gameState={status:'waiting',board:[],players:[],rack:[],bagRemaining:98};
 let pending=[], selIdx=null, soundOn=true, audioCtx=null, fullMoveHistory=[];
 let kbRow=7, kbCol=7, kbActive=false, kbDir='h';
@@ -164,7 +165,16 @@ function clearSession() { try{ sessionStorage.removeItem('scarabeo_session'); }c
 function handle(msg) {
   switch(msg.type) {
     case 'CONNECTED':   myId=msg.playerId; break;
-    case 'AUTH_LINK_OK': console.log('✅ Auth collegata:', msg.username); break;
+    case 'AUTH_LINK_OK': 
+      console.log('✅ Auth collegata:', msg.username); 
+      nameConfirmed=true; 
+      enableLobbyButtons();
+      break;
+    case 'NAME_SET': 
+      console.log('✅ Nome impostato:', msg.name); 
+      nameConfirmed=true;
+      enableLobbyButtons();
+      break;
 
     case 'RECONNECTED':
       myRoom=msg.roomCode;
@@ -588,6 +598,13 @@ function addStatChip(html,container){ const chip=document.createElement('div');c
 // ── Mobile tabs ──
 function setMobileTab(tab){ document.querySelectorAll('.mtab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab)); document.getElementById('panel-board').classList.toggle('tab-active',tab==='board'); document.getElementById('panel-scores').classList.toggle('tab-active',tab==='scores'||tab==='chat'); document.getElementById('panel-history').classList.toggle('tab-active',tab==='history'); }
 
+// ──Abilita bottoni lobby quando il nome è confermato ──
+function enableLobbyButtons() {
+  document.getElementById('btn-create-open')?.removeAttribute('disabled');
+  document.getElementById('btn-join-open')?.removeAttribute('disabled');
+  document.getElementById('btn-create-remove')?.removeAttribute('disabled');
+}
+
 // ── Lobby tabs ──
 function setLobbyTab(tab){
   document.querySelectorAll('.lobby-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
@@ -736,6 +753,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function enterLobby(displayName, isGuest=false) {
   myName=displayName;
+  nameConfirmed=false; // NUOVO: attendi conferma dal server
+  // Disabilita bottoni lobby finché il nome non sia confermato
+  document.getElementById('btn-create-open')?.setAttribute('disabled', 'disabled');
+  document.getElementById('btn-join-open')?.setAttribute('disabled', 'disabled');
   // Aggiorna UI profilo
   document.getElementById('user-display-name').textContent=displayName;
   document.getElementById('user-avatar').textContent=displayName[0]?.toUpperCase()||'?';
@@ -743,10 +764,11 @@ function enterLobby(displayName, isGuest=false) {
   if(!isGuest) {
     // Collega l'account alla sessione WS (potrebbe non essere ancora aperta)
     if(ws?.readyState===WebSocket.OPEN && myToken) send('AUTH_LINK',{token:myToken});
+    else setTimeout(()=>{ if(myToken) send('AUTH_LINK',{token:myToken}); }, 500);
   } else {
     // Per ospiti: imposta il nome via WS quando disponibile
     if(ws?.readyState===WebSocket.OPEN) send('SET_NAME',{name:displayName});
-    else setTimeout(()=>send('SET_NAME',{name:displayName}),1000);
+    else setTimeout(()=>send('SET_NAME',{name:displayName}),100);
   }
   showScreen('screen-lobby');
   setLobbyTab('home');
